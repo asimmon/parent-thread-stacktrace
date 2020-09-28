@@ -1,7 +1,5 @@
 ﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
 using System.Threading;
 
 namespace ThreadStacktrace
@@ -10,31 +8,41 @@ namespace ThreadStacktrace
     {
         private static readonly ConcurrentDictionary<int, StackedStackTrace> ParentStackTraces = new ConcurrentDictionary<int, StackedStackTrace>();
 
-        public static void Register(Thread thread)
+        public static Thread Create(ThreadStart start, ThreadCreationOptions options)
         {
-            ParentStackTraces.TryAdd(thread.ManagedThreadId, GetParentStackTrace());
-        }
-
-        public static void UnregisterCurrentThread()
-        {
-            ParentStackTraces.TryRemove(Thread.CurrentThread.ManagedThreadId, out _);
-        }
-
-        public static bool TryGetParentStackTrace(out IStackedStackTrace parentStackTrace)
-        {
-            if (ParentStackTraces.TryGetValue(Thread.CurrentThread.ManagedThreadId, out var stackTrace))
+            var thread = new Thread(WrapWithParentStackTrace(start))
             {
-                parentStackTrace = stackTrace;
-                return true;
+                IsBackground = options.IsBackground
+            };
+
+            if (!string.IsNullOrEmpty(options.Name))
+            {
+                thread.Name = options.Name;
             }
 
-            parentStackTrace = null;
-            return false;
+            return thread;
         }
 
-        public static int Count()
+        private static ThreadStart WrapWithParentStackTrace(ThreadStart start)
         {
-            return ParentStackTraces.Count;
+            var parentStackTrace = GetParentStackTrace();
+
+            void Wrapper()
+            {
+                var currentThreadId = Thread.CurrentThread.ManagedThreadId;
+                ParentStackTraces.TryAdd(currentThreadId, parentStackTrace);
+
+                try
+                {
+                    start();
+                }
+                finally
+                {
+                    ParentStackTraces.TryRemove(currentThreadId, out _);
+                }
+            }
+
+            return Wrapper;
         }
 
         private static StackedStackTrace GetParentStackTrace()
@@ -48,47 +56,16 @@ namespace ThreadStacktrace
             return stackTrace;
         }
 
-        public interface IStackedStackTrace
+        public static bool TryGetParentStackTrace(out StackedStackTrace parentStackTrace)
         {
-            string ToString();
-        }
-
-        private class StackedStackTrace : IStackedStackTrace
-        {
-            private readonly IList<StackTrace> _stackTraces;
-
-            public StackedStackTrace()
+            if (ParentStackTraces.TryGetValue(Thread.CurrentThread.ManagedThreadId, out var stackTrace))
             {
-                this._stackTraces = new List<StackTrace>();
+                parentStackTrace = stackTrace;
+                return true;
             }
 
-            private StackedStackTrace(IEnumerable<StackTrace> stackTraces)
-            {
-                this._stackTraces = new List<StackTrace>(stackTraces);
-            }
-
-            public void Add(StackTrace stackTrace)
-            {
-                this._stackTraces.Add(stackTrace);
-            }
-
-            public StackedStackTrace Clone()
-            {
-                return new StackedStackTrace(this._stackTraces);
-            }
-
-            public override string ToString()
-            {
-                var sb = new StringBuilder();
-
-                for (var i = this._stackTraces.Count - 1; i >= 0; i--)
-                {
-                    sb.Append("Parent thread ").Append(i).AppendLine(":");
-                    sb.Append(this._stackTraces[i]);
-                }
-
-                return sb.ToString();
-            }
+            parentStackTrace = null;
+            return false;
         }
     }
 }

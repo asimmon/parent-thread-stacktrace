@@ -7,7 +7,7 @@ namespace ThreadStacktrace
     {
         public static void Main()
         {
-            var t1 = ParentThreadAwareThreadFactory.Create(FirstLongOperation, new ThreadCreationOptions
+            var t1 = ParentThreads.Create(FirstLongOperation, new ThreadCreationOptions
             {
                 IsBackground = true,
                 Name = "T1"
@@ -19,7 +19,7 @@ namespace ThreadStacktrace
 
         private static void FirstLongOperation()
         {
-            var t2 = ParentThreadAwareThreadFactory.Create(SecondLongOperation, new ThreadCreationOptions
+            var t2 = ParentThreads.Create(SecondLongOperation, new ThreadCreationOptions
             {
                 IsBackground = true,
                 Name = "T2"
@@ -50,7 +50,7 @@ namespace ThreadStacktrace
             }
             catch (Exception ex)
             {
-                throw new ParentThreadAwareException(ex.Message, ex);
+                throw new ParentThreadException(ex.Message, ex);
             }
         }
     }

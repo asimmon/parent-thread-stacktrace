@@ -3,23 +3,23 @@ using System.Runtime.Serialization;
 
 namespace ThreadStacktrace
 {
-    public class ParentThreadAwareException : Exception
+    public class ParentThreadException : Exception
     {
-        public ParentThreadAwareException()
+        public ParentThreadException()
         {
         }
 
-        public ParentThreadAwareException(string message)
+        public ParentThreadException(string message)
             : base(message)
         {
         }
 
-        public ParentThreadAwareException(string message, Exception innerException)
+        public ParentThreadException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
 
-        protected ParentThreadAwareException(SerializationInfo info, StreamingContext context)
+        protected ParentThreadException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
         }
@@ -30,7 +30,7 @@ namespace ThreadStacktrace
 
             if (ParentThreads.TryGetParentStackTrace(out var stackTrace))
             {
-                stackTraceText += Environment.NewLine + stackTrace.ToString();
+                stackTraceText += Environment.NewLine + stackTrace;
             }
 
             return stackTraceText;
