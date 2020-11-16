@@ -7,6 +7,23 @@ namespace ThreadStacktrace
     {
         public static void Main()
         {
+            Threads();
+
+            Console.WriteLine("Press ENTER to exit");
+            Console.ReadLine();
+        }
+
+        private static void Tasks()
+        {
+            Console.WriteLine($"Thread #{Thread.CurrentThread.ManagedThreadId}: running {nameof(Tasks)}");
+            using var taskGroup = new TaskExecutor();
+            taskGroup.Execute(state => FirstLongOperation(), (object)null);
+        }
+
+        private static void Threads()
+        {
+            Console.WriteLine($"Thread #{Thread.CurrentThread.ManagedThreadId}: running {nameof(Threads)}");
+
             var t1 = ParentThreadAwareThreadFactory.Create(FirstLongOperation, new ThreadCreationOptions
             {
                 IsBackground = true,
@@ -19,6 +36,8 @@ namespace ThreadStacktrace
 
         private static void FirstLongOperation()
         {
+            Console.WriteLine($"Thread #{Thread.CurrentThread.ManagedThreadId}: running {nameof(FirstLongOperation)}");
+
             var t2 = ParentThreadAwareThreadFactory.Create(SecondLongOperation, new ThreadCreationOptions
             {
                 IsBackground = true,
@@ -31,6 +50,8 @@ namespace ThreadStacktrace
 
         private static void SecondLongOperation()
         {
+            Console.WriteLine($"Thread #{Thread.CurrentThread.ManagedThreadId}: running {nameof(SecondLongOperation)}");
+
             try
             {
                 Thread.Sleep(TimeSpan.FromSeconds(2));

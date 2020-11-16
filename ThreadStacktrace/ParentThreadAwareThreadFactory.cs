@@ -12,7 +12,8 @@ namespace ThreadStacktrace
                 Name = options.Name
             };
 
-            ParentThreads.Register(thread);
+            var parentThreadStackTrace = ThreadStackTrace.GetCurrentThreadStackTrace();
+            ThreadStackTrace.RegisterParentThreadStackTrace(thread.ManagedThreadId, parentThreadStackTrace);
 
             return thread;
         }
@@ -27,7 +28,7 @@ namespace ThreadStacktrace
                 }
                 finally
                 {
-                    ParentThreads.UnregisterCurrentThread();
+                    ThreadStackTrace.UnregisterParentThreadStackTrace(Thread.CurrentThread.ManagedThreadId);
                 }
             }
 

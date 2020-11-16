@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Globalization;
 using System.Runtime.Serialization;
+using System.Threading;
 
 namespace ThreadStacktrace
 {
+    [Serializable]
     public class ParentThreadAwareException : Exception
     {
         public ParentThreadAwareException()
@@ -26,11 +29,13 @@ namespace ThreadStacktrace
 
         public override string ToString()
         {
+            var currentThreadId = Thread.CurrentThread.ManagedThreadId;
+
             var stackTraceText = base.ToString();
 
-            if (ParentThreads.TryGetParentStackTrace(out var stackTrace))
+            if (ThreadStackTrace.TryGetParentThreadStackTrace(currentThreadId, out var parentThreadStackTrace))
             {
-                stackTraceText += Environment.NewLine + stackTrace.ToString();
+                return "Current thread #" + currentThreadId.ToString(CultureInfo.InvariantCulture) + ":" + Environment.NewLine + stackTraceText + Environment.NewLine + parentThreadStackTrace;
             }
 
             return stackTraceText;
